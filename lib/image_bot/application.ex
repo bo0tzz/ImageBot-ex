@@ -8,8 +8,8 @@ defmodule ImageBot.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Starts a worker by calling: ImageBot.Worker.start_link(arg)
-      # {ImageBot.Worker, arg}
+      ExGram,
+      {ImageBot, [method: :polling, token: Application.fetch_env!(:image_bot, :token)]},
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -1,18 +1,14 @@
 defmodule ImageBot do
-  @moduledoc """
-  Documentation for `ImageBot`.
-  """
+  @bot :image_bot
 
-  @doc """
-  Hello world.
+  use ExGram.Bot,
+    name: @bot,
+    setup_commands: true
 
-  ## Examples
+  def bot(), do: @bot
 
-      iex> ImageBot.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  def handle({:text, _text, message}, context) do
+    IO.inspect(message)
+    answer(context, "Hello world!")
   end
 end
