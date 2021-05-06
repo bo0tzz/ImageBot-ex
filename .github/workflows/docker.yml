@@ -1,0 +1,24 @@
+name: Push docker
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: satackey/action-docker-layer-caching@v0.0.8
+      continue-on-error: true
+    - name: Push to GitHub Container Registry
+      uses: docker/build-push-action@v1
+      with:
+        username: ${{ github.actor }}
+        password: ${{ secrets.CR_PAT }}
+        registry: ghcr.io
+        repository: bo0tzz/image_bot
+        tag_with_ref: true
