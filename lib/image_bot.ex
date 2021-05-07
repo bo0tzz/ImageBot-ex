@@ -18,21 +18,28 @@ defmodule ImageBot do
 
   defp handle_inline_query(%{from: %{id: user_id}, query: query}, context) do
     Logger.info("Inline query for '#{query}' from user [#{user_id}]")
-    response = case Cachex.get(:search_cache, query) do
-      {:ok, nil} -> search(user_id, query)
-      {:ok, response} ->
-        Logger.debug("Cache hit for query '#{query}'")
-        response
-    end
+
+    response =
+      case Cachex.get(:search_cache, query) do
+        {:ok, nil} ->
+          search(user_id, query)
+
+        {:ok, response} ->
+          Logger.debug("Cache hit for query '#{query}'")
+          response
+      end
+
     answer_inline_query(context, response)
   end
 
   defp search(user_id, query) do
     Logger.debug("Searching for query '#{query}'")
+
     case get_google_api_key(user_id) |> Search.find_images(query) do
-      {:error, nil} ->
+      {:error, _response} ->
         Logger.warn("Query #{query} from user #{user_id} caused error!")
         error_response()
+
       {:ok, items} ->
         results = as_query_results(items)
         Cachex.put(:search_cache, query, results)
@@ -58,11 +65,13 @@ defmodule ImageBot do
   end
 
   defp error_response() do
-    [%ExGram.Model.InlineQueryResultArticle{
-      title: "Error",
-      input_message_content: %ExGram.Model.InputTextMessageContent{
-        message_text: "Something's fucky!"
+    [
+      %ExGram.Model.InlineQueryResultArticle{
+        title: "Error",
+        input_message_content: %ExGram.Model.InputTextMessageContent{
+          message_text: "Something's fucky!"
+        }
       }
-    }]
+    ]
   end
 end
