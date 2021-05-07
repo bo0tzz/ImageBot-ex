@@ -15,6 +15,7 @@ defmodule ImageBot.Application do
          expiration: Cachex.Spec.expiration(interval: nil, default: 84600),
          limit: Cachex.Spec.limit(size: 5000)
        ]},
+      Search.Keys,
       ExGram,
       {ImageBot, [method: :polling, token: Application.fetch_env!(:image_bot, :bot_token)]}
     ]

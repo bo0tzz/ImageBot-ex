@@ -27,3 +27,4 @@ image_bot-*.tar
 /tmp
 
 .env
+keys.db

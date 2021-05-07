@@ -9,4 +9,5 @@ end
 
 config :image_bot,
   bot_token: System.fetch_env!("BOT_TOKEN"),
-  google_key: System.fetch_env!("GOOGLE_KEY")
+  google_key: System.fetch_env!("GOOGLE_KEY"),
+  key_db_path: System.get_env("KEY_DB_PATH", "./keys.db")
