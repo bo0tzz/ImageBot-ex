@@ -28,7 +28,8 @@ defmodule ImageBot.MixProject do
       {:jason, ">= 1.0.0"},
       {:google_api_custom_search, "~> 0.16"},
       {:elixir_uuid, "~> 1.2"},
-      {:dotenv_parser, "~> 1.2"}
+      {:dotenv_parser, "~> 1.2"},
+      {:cachex, "~> 3.3"}
     ]
   end
 end

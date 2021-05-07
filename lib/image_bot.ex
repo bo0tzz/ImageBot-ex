@@ -1,4 +1,6 @@
 defmodule ImageBot do
+  require Logger
+
   @bot :image_bot
 
   use ExGram.Bot,
@@ -15,12 +17,27 @@ defmodule ImageBot do
   end
 
   defp handle_inline_query(%{from: %{id: user_id}, query: query}, context) do
-    IO.puts("Inline query for '#{query}' from user [#{user_id}]")
-    response = case get_google_api_key(user_id) |> Search.find_images(query) do
-      {:error, nil} -> error_response()
-      {:ok, items} -> as_query_results(items)
+    Logger.info("Inline query for '#{query}' from user [#{user_id}]")
+    response = case Cachex.get(:search_cache, query) do
+      {:ok, nil} -> search(user_id, query)
+      {:ok, response} ->
+        Logger.debug("Cache hit for query '#{query}'")
+        response
     end
     answer_inline_query(context, response)
+  end
+
+  defp search(user_id, query) do
+    Logger.debug("Searching for query '#{query}'")
+    case get_google_api_key(user_id) |> Search.find_images(query) do
+      {:error, nil} ->
+        Logger.warn("Query #{query} from user #{user_id} caused error!")
+        error_response()
+      {:ok, items} ->
+        results = as_query_results(items)
+        Cachex.put(:search_cache, query, results)
+        results
+    end
   end
 
   defp get_google_api_key(_user_id) do

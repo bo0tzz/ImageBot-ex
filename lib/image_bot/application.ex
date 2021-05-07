@@ -4,10 +4,16 @@ defmodule ImageBot.Application do
   @moduledoc false
 
   use Application
+  require Cachex.Spec
 
   @impl true
   def start(_type, _args) do
     children = [
+      {Cachex, [
+        name: :search_cache,
+        expiration: Cachex.Spec.expiration(interval: nil, default: 84600),
+        limit: Cachex.Spec.limit([size: 5000]),
+      ]},
       ExGram,
       {ImageBot, [method: :polling, token: Application.fetch_env!(:image_bot, :bot_token)]}
     ]
