@@ -35,20 +35,22 @@ defmodule ImageBot do
   defp search(user_id, query) do
     Logger.debug("Searching for query '#{query}'")
 
-    case get_google_api_key(user_id) |> Search.find_images(query) do
-      {:error, _response} ->
-        Logger.warn("Query #{query} from user #{user_id} caused error!")
-        error_response()
+    case Search.Keys.get_key(user_id) do
+      {:ok, nil} ->
+        error_response(:limited)
 
-      {:ok, items} ->
-        results = as_query_results(items)
-        Cachex.put(:search_cache, query, results)
-        results
+      {:ok, key} ->
+        case Search.find_images(key, query) do
+          {:error, _response} ->
+            Logger.warn("Query #{query} from user #{user_id} caused error!")
+            error_response()
+
+          {:ok, items} ->
+            results = as_query_results(items)
+            Cachex.put(:search_cache, query, results)
+            results
+        end
     end
-  end
-
-  defp get_google_api_key(_user_id) do
-    Application.fetch_env!(:image_bot, :google_key)
   end
 
   defp as_query_results(items) do
@@ -64,14 +66,21 @@ defmodule ImageBot do
     end)
   end
 
-  defp error_response() do
-    [
+  defp error_response(:limited),
+    do: error_response("The bot has reached its request limit for today!", "Try again later!")
+
+  defp error_response(), do: error_response("Error", "An unexpected error occurred!")
+
+  defp error_response(title, message),
+    do: [
       %ExGram.Model.InlineQueryResultArticle{
-        title: "Error",
+        type: "article",
+        id: UUID.uuid4(),
+        title: title,
+        description: message,
         input_message_content: %ExGram.Model.InputTextMessageContent{
-          message_text: "Something's fucky!"
+          message_text: title <> "\n" <> message
         }
       }
     ]
-  end
 end

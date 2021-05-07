@@ -9,7 +9,7 @@ defmodule Search do
     case res do
       {:error, response} ->
         Logger.warn("Google API call failed", body: response.body)
-        {:error, response}
+        {:error, response.status}
 
       {:ok, response} ->
         {:ok, response.items}
