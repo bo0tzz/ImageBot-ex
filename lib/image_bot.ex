@@ -16,20 +16,30 @@ defmodule ImageBot do
     end
   end
 
+  def handle({:command, "start", %{text: "limited_info_request"}}, context) do
+    answer(
+      context,
+      """
+      Unfortunately this bot can only make a limited number of free searches every day. For now, you'll need to wait until the limits reset.
+      In the near future there will be the possibility to add your own API keys to avoid being limited
+      """
+    )
+  end
+
   defp handle_inline_query(%{from: %{id: user_id}, query: query}, context) do
     Logger.info("Inline query for '#{query}' from user [#{user_id}]")
 
-    response =
+    {response, opts} =
       case Cachex.get(:search_cache, query) do
         {:ok, nil} ->
           search(user_id, query)
 
         {:ok, response} ->
           Logger.debug("Cache hit for query '#{query}'")
-          response
+          {response, []}
       end
 
-    answer_inline_query(context, response)
+    answer_inline_query(context, response, opts)
   end
 
   defp search(user_id, query) do
@@ -48,7 +58,7 @@ defmodule ImageBot do
           {:ok, items} ->
             results = as_query_results(items)
             Cachex.put(:search_cache, query, results)
-            results
+            {results, []}
         end
     end
   end
@@ -67,20 +77,27 @@ defmodule ImageBot do
   end
 
   defp error_response(:limited),
-    do: error_response("The bot has reached its request limit for today!", "Try again later!")
+    do:
+      {[],
+       [
+         switch_pm_text: "Request limit reached. Click here for more information.",
+         switch_pm_parameter: "limited_info_request",
+         cache_time: 0
+       ]}
 
   defp error_response(), do: error_response("Error", "An unexpected error occurred!")
 
-  defp error_response(title, message),
-    do: [
-      %ExGram.Model.InlineQueryResultArticle{
-        type: "article",
-        id: UUID.uuid4(),
-        title: title,
-        description: message,
-        input_message_content: %ExGram.Model.InputTextMessageContent{
-          message_text: title <> "\n" <> message
-        }
-      }
-    ]
+  defp error_response(title, message, opts \\ []),
+    do:
+      {[
+         %ExGram.Model.InlineQueryResultArticle{
+           type: "article",
+           id: UUID.uuid4(),
+           title: title,
+           description: message,
+           input_message_content: %ExGram.Model.InputTextMessageContent{
+             message_text: title <> "\n" <> message
+           }
+         }
+       ], opts}
 end
