@@ -25,7 +25,10 @@ defmodule ImageBot.MixProject do
       {:ex_gram, "~> 0.21"},
       {:tesla, "~> 1.2"},
       {:hackney, "~> 1.12"},
-      {:jason, ">= 1.0.0"}
+      {:jason, ">= 1.0.0"},
+      {:google_api_custom_search, "~> 0.16"},
+      {:elixir_uuid, "~> 1.2"},
+      {:dotenv_parser, "~> 1.2"}
     ]
   end
 end

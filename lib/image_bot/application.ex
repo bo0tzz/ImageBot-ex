@@ -9,7 +9,7 @@ defmodule ImageBot.Application do
   def start(_type, _args) do
     children = [
       ExGram,
-      {ImageBot, [method: :polling, token: Application.fetch_env!(:image_bot, :token)]},
+      {ImageBot, [method: :polling, token: Application.fetch_env!(:image_bot, :bot_token)]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

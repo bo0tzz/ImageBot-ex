@@ -25,3 +25,5 @@ image_bot-*.tar
 
 # Temporary files for e.g. tests
 /tmp
+
+.env
