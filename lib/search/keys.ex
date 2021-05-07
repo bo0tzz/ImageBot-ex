@@ -37,6 +37,20 @@ defmodule Search.Keys do
     {:noreply, state}
   end
 
+  @impl true
+  def handle_cast({:add, {id, key}}, %Keys{key_mappings: mappings} = state) do
+    mappings =
+      Map.update(mappings, id, %{position: 0, keys: [{key, 0}]}, fn map ->
+        %{map | keys: [{key, 0} | map.keys]}
+      end)
+
+    {
+      :noreply,
+      %{state | key_mappings: mappings},
+      {:continue, :save}
+    }
+  end
+
   defp load_keys(path) do
     case File.read(path) do
       {:ok, bin} ->
@@ -49,7 +63,8 @@ defmodule Search.Keys do
     end
   end
 
-  defp save(%Keys{storage_path: path, key_mappings: keys}) do
+  defp save(%Keys{storage_path: path, key_mappings: keys} = state) do
+    Logger.debug("Saving state: #{inspect(state)}")
     data = :erlang.term_to_binary(keys)
 
     case File.write(path, data) do
@@ -61,4 +76,7 @@ defmodule Search.Keys do
         Logger.error("Failed to write keys database to #{path}: #{:file.format_error(reason)}")
     end
   end
+
+  def add(id, key), do: GenServer.cast(__MODULE__, {:add, {id, key}})
+  def add(key), do: GenServer.cast(__MODULE__, {:add, {:shared, key}})
 end
