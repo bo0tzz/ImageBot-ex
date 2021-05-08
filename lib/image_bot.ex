@@ -142,7 +142,7 @@ defmodule ImageBot do
 
   defp search(user_id, query, tries \\ 3)
 
-  defp search(user_id, query, 0) do
+  defp search(user_id, _, 0) do
     Logger.error("Query from user [#{user_id}] failed retries")
     error_response("Error", "Something went wrong, please try again")
   end
@@ -206,8 +206,6 @@ defmodule ImageBot do
          switch_pm_text: "Request limit reached. Click here for more information.",
          switch_pm_parameter: "limited_info_request"
        ]}
-
-  defp error_response(), do: error_response("Error", "An unexpected error occurred!")
 
   defp error_response(title, message, opts \\ []),
     do:
