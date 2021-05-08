@@ -52,6 +52,41 @@ defmodule Search.Keys do
   end
 
   @impl true
+  def handle_cast({:mark_bad, id, key}, %Keys{key_mappings: mappings} = state) do
+    mappings =
+      case Map.get(mappings, id) do
+        nil ->
+          reject_key(mappings, :shared, key)
+
+        keys ->
+          case Enum.any?(keys, &match?({^key, _}, &1)) do
+            false ->
+              reject_key(mappings, :shared, key)
+
+            true ->
+              reject_key(mappings, id, key)
+          end
+      end
+
+    {
+      :noreply,
+      %{state | key_mappings: mappings},
+      {:continue, :save}
+    }
+  end
+
+  defp reject_key(mappings, id, key) do
+    Map.update(
+      mappings,
+      id,
+      [],
+      fn keys ->
+        Enum.reject(keys, &match?({^key, _}, &1))
+      end
+    )
+  end
+
+  @impl true
   def handle_call({:get_key, id}, _, %Keys{key_mappings: mappings} = state) do
     {key, mappings} =
       case find_active_key(mappings, :shared) do
@@ -121,4 +156,8 @@ defmodule Search.Keys do
   def add(key), do: GenServer.cast(__MODULE__, {:add, {:shared, key}})
 
   def get_key(id), do: GenServer.call(__MODULE__, {:get_key, id})
+
+  def mark_bad(id, key), do: GenServer.cast(__MODULE__, {:mark_bad, id, key})
+  # TODO
+  def mark_limited(id, key), do: nil
 end
