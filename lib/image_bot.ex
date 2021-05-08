@@ -17,6 +17,8 @@ defmodule ImageBot do
   command("limits", description: "Information about the API limits")
   command("start", description: "Get started")
 
+  middleware(ExGram.Middleware.IgnoreUsername)
+
   def handle({:inline_query, %{query: query} = msg}, context) do
     case String.trim(query) do
       "" -> nil
