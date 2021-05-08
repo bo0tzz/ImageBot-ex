@@ -53,16 +53,17 @@ defmodule Search.Keys do
 
   @impl true
   def handle_cast({:mark_limited, id, key}, %Keys{key_mappings: mappings} = state) do
-    mappings = case Map.get(mappings, id) do
-      nil ->
-        mark_limited(mappings, :shared, key)
+    mappings =
+      case Map.get(mappings, id) do
+        nil ->
+          mark_limited(mappings, :shared, key)
 
-      keys ->
-        case Enum.any?(keys, &match?({^key, _}, &1)) do
-          false -> mark_limited(mappings, :shared, key)
-          true -> mark_limited(mappings, id, key)
-        end
-    end
+        keys ->
+          case Enum.any?(keys, &match?({^key, _}, &1)) do
+            false -> mark_limited(mappings, :shared, key)
+            true -> mark_limited(mappings, id, key)
+          end
+      end
 
     {
       :noreply,
@@ -86,6 +87,8 @@ defmodule Search.Keys do
 
   @impl true
   def handle_cast({:mark_bad, id, key}, %Keys{key_mappings: mappings} = state) do
+    Logger.warn("Marking key [#{key}] as bad")
+
     mappings =
       case Map.get(mappings, id) do
         nil ->

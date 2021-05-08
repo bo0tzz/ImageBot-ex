@@ -42,7 +42,12 @@ defmodule ImageBot do
     answer_inline_query(context, response, opts)
   end
 
-  defp search(user_id, query) do
+  defp search(user_id, query, 0) do
+    Logger.error("Query '#{query}' from user [#{user_id}] failed retries")
+    error_response("Error", "Something went wrong, please try again")
+  end
+
+  defp search(user_id, query, tries \\ 3) do
     Logger.debug("Searching for query '#{query}'")
 
     case Search.Keys.get_key(user_id) do
@@ -51,9 +56,24 @@ defmodule ImageBot do
 
       {:ok, key} ->
         case Search.find_images(key, query) do
-          {:error, _response} ->
-            Logger.warn("Query #{query} from user #{user_id} caused error!")
-            error_response()
+          {:error, response} ->
+            Logger.warn("Query '#{query}' from user [#{user_id}] caused error #{response}!")
+
+            case response do
+              400 ->
+                Search.Keys.mark_bad(user_id, key)
+                search(user_id, query, tries - 1)
+
+              429 ->
+                Search.Keys.mark_limited(user_id, key)
+                search(user_id, query, tries - 1)
+
+              other ->
+                error_response(
+                  "Error #{other}",
+                  "An unexpected error with code #{other} occurred"
+                )
+            end
 
           {:ok, items} ->
             results = as_query_results(items)
