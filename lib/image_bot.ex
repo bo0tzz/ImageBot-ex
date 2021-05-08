@@ -69,17 +69,11 @@ defmodule ImageBot do
 
   def handle({:command, :feedback, %{from: %{id: user_id}, text: feedback}}, context) do
     Logger.info("User [#{user_id}] sent feedback [#{feedback}]")
-    feedback_chat = Application.fetch_env!(:image_bot, :feedback_chat)
 
-    ExGram.send_message(
-      feedback_chat,
-      """
-      *User [#{user_id}](tg://user?id=#{user_id}) sent feedback:*
-      #{feedback}
-      """,
-      parse_mode: "MarkdownV2",
-      bot: bot()
-    )
+    notify_owner("""
+    *User [#{user_id}](tg://user?id=#{user_id}) sent feedback:*
+    #{feedback}
+    """)
 
     answer(
       context,
@@ -104,6 +98,7 @@ defmodule ImageBot do
   def handle({:command, :donatekey, %{from: user, text: key}}, context) do
     Logger.info("User [#{inspect(user)}] graciously donated a key! <3")
     Search.Keys.add(key)
+    notify_owner("User [#{user_id}](tg://user?id=#{user_id}) donated a key <3")
     answer(context, "Thank you so much for donating a key! We love you <3")
   end
 
@@ -225,4 +220,13 @@ defmodule ImageBot do
            }
          }
        ], Keyword.merge([cache_time: 0], opts)}
+
+  defp notify_owner(message),
+    do:
+      ExGram.send_message(
+        Application.fetch_env!(:image_bot, :feedback_chat),
+        message,
+        parse_mode: "MarkdownV2",
+        bot: bot()
+      )
 end
