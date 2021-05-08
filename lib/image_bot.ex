@@ -62,7 +62,7 @@ defmodule ImageBot do
       /feedback I really like this bot!
       """)
 
-  def handle({:command, :feedback, %{from: %{id: user_id}, text: feedback} = msg}, context) do
+  def handle({:command, :feedback, %{from: %{id: user_id}, text: feedback}}, context) do
     Logger.info("User [#{user_id}] sent feedback [#{feedback}]")
     feedback_chat = Application.fetch_env!(:image_bot, :feedback_chat)
 

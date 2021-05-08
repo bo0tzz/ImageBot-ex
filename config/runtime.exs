@@ -1,10 +1,7 @@
 import Config
 
-config :logger, level: :info
-
 if Config.config_env() == :dev do
   DotenvParser.load_file(".env")
-  config :logger, level: :debug
 end
 
 config :image_bot,

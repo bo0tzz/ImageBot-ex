@@ -165,7 +165,7 @@ defmodule Search.Keys do
   defp load_keys(path) do
     case File.read(path) do
       {:ok, bin} ->
-        Logger.debug("Loading keys database from path #{path}")
+        Logger.info("Loading keys database from path #{path}")
         :erlang.binary_to_term(bin)
 
       {:error, reason} ->
@@ -180,7 +180,7 @@ defmodule Search.Keys do
 
     case File.write(path, data) do
       :ok ->
-        Logger.debug("Saved api key data")
+        Logger.info("Saved api key data")
         :ok
 
       {:error, reason} ->
