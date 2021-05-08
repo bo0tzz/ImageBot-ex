@@ -133,7 +133,7 @@ defmodule ImageBot do
           search(user_id, query)
 
         {:ok, response} ->
-          Logger.debug("Cache hit for query '#{query}'")
+          Logger.info("Cache hit")
           {response, []}
       end
 
@@ -143,7 +143,7 @@ defmodule ImageBot do
   defp search(user_id, query, tries \\ 3)
 
   defp search(user_id, query, 0) do
-    Logger.error("Query '#{query}' from user [#{user_id}] failed retries")
+    Logger.error("Query from user [#{user_id}] failed retries")
     error_response("Error", "Something went wrong, please try again")
   end
 
@@ -157,7 +157,7 @@ defmodule ImageBot do
       {:ok, key} ->
         case Search.find_images(key, query) do
           {:error, response} ->
-            Logger.warn("Query '#{query}' from user [#{user_id}] caused error #{response}!")
+            Logger.warn("Query from user [#{user_id}] caused error #{response}!")
 
             case response do
               400 ->
