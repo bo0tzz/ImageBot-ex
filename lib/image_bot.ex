@@ -12,6 +12,7 @@ defmodule ImageBot do
 
   command("donatekey", description: "Donate a shared API key to the bot")
   command("addkey", description: "Add a personal API key to the bot")
+  command("feedback", description: "Send feedback about the bot")
   command("info", description: "Information about this bot")
   command("limits", description: "Information about the API limits")
   command("start", description: "Get started")
@@ -51,6 +52,33 @@ defmodule ImageBot do
 
       There is a limit to the amount of searches that can be done through this bot every day. For more detail see the /limits command.
       """
+    )
+  end
+
+  def handle({:command, :feedback, %{text: ""}}, context),
+    do:
+      answer(context, """
+      This command can be used to send feedback to the owner of this bot. To use it, just put your feedback after the command. For example:
+      /feedback I really like this bot!
+      """)
+
+  def handle({:command, :feedback, %{from: %{id: user_id}, text: feedback} = msg}, context) do
+    Logger.info("User [#{user_id}] sent feedback [#{feedback}]")
+    feedback_chat = Application.fetch_env!(:image_bot, :feedback_chat)
+
+    ExGram.send_message(
+      feedback_chat,
+      """
+      *User [#{user_id}](tg://user?id=#{user_id}) sent feedback:*
+      #{feedback}
+      """,
+      parse_mode: "MarkdownV2",
+      bot: bot()
+    )
+
+    answer(
+      context,
+      "Thank you for sending feedback! If you asked a question, we will get in touch with you soon."
     )
   end
 
