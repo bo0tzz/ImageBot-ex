@@ -67,11 +67,12 @@ defmodule ImageBot do
       /feedback I really like this bot!
       """)
 
-  def handle({:command, :feedback, %{from: %{id: user_id}, text: feedback}}, context) do
-    Logger.info("User [#{user_id}] sent feedback [#{feedback}]")
+  def handle({:command, :feedback, %{from: user, text: feedback}}, context) do
+    user_ref = parse_user_ref(user)
+    Logger.info("User [#{user_ref}] sent feedback [#{feedback}]")
 
     notify_owner("""
-    *User [#{user_id}](tg://user?id=#{user_id}) sent feedback:*
+    *User #{user_ref} sent feedback:*
     #{feedback}
     """)
 
@@ -96,9 +97,10 @@ defmodule ImageBot do
       )
 
   def handle({:command, :donatekey, %{from: user, text: key}}, context) do
-    Logger.info("User [#{inspect(user)}] graciously donated a key! <3")
+    user_ref = parse_user_ref(user)
+    Logger.info("User [#{user_ref}] graciously donated a key! <3")
     Search.Keys.add(key)
-    notify_owner("User [#{user_id}](tg://user?id=#{user_id}) donated a key <3")
+    notify_owner("User #{user_ref} donated a key <3")
     answer(context, "Thank you so much for donating a key! We love you <3")
   end
 
@@ -220,6 +222,14 @@ defmodule ImageBot do
            }
          }
        ], Keyword.merge([cache_time: 0], opts)}
+
+  defp parse_user_ref(%{username: username}), do: "@" <> username
+
+  defp parse_user_ref(%{id: id, first_name: first_name, last_name: last_name}),
+    do: "[#{first_name} #{last_name}](tg://user?id=#{id})"
+
+  defp parse_user_ref(%{id: id, first_name: first_name}),
+    do: "[#{first_name}](tg://user?id=#{id})"
 
   defp notify_owner(message),
     do:
