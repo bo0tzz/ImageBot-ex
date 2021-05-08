@@ -8,8 +8,13 @@ defmodule ImageBot do
     setup_commands: true
 
   def bot(), do: @bot
+  def me(), do: ExGram.get_me(bot: bot())
 
   command("donatekey", description: "Donate a shared API key to the bot")
+  command("addkey", description: "Add a personal API key to the bot")
+  command("info", description: "Information about this bot")
+  command("limits", description: "Information about the API limits")
+  command("start", description: "Get started")
 
   def handle({:inline_query, %{query: query} = msg}, context) do
     case String.trim(query) do
@@ -18,12 +23,33 @@ defmodule ImageBot do
     end
   end
 
-  def handle({:command, "start", %{text: "limited_info_request"}}, context) do
+  def handle({:command, :start, %{text: "limited_info_request"} = msg}, context),
+    do: handle({:command, :limits, msg}, context)
+
+  def handle({:command, :start, msg}, context), do: handle({:command, :info, msg}, context)
+
+  def handle({:command, :limits, _msg}, context) do
     answer(
       context,
       """
-      Unfortunately this bot can only make a limited number of free searches every day. For now, you'll need to wait until the limits reset.
-      In the near future there will be the possibility to add your own API keys to avoid being limited.
+      Unfortunately this bot can only make a limited number of free searches every day. For now, you'll need to wait until the limits reset, or add an API key.
+      To help increase the limits for everyone, you can add extra Google API keys through the /donatekey command.
+      Alternatively, if you just want to add a key for yourself, use /addkey.
+      """
+    )
+  end
+
+  def handle({:command, :info, _msg}, context) do
+    {:ok, me} = me()
+
+    answer(
+      context,
+      """
+      This is a bot for searching through Google images and sending results to a group.
+      To use it, just type @#{me.username} <search> in the chat box. For example, to find pictures of dogs, you could type:
+      @#{me.username} dogs
+
+      There is a limit to the amount of searches that can be done through this bot every day. For more detail see the /limits command.
       """
     )
   end
@@ -33,9 +59,9 @@ defmodule ImageBot do
       answer(
         context,
         """
-        With this command, you can donate a Google API key to be added to the pool of shared keys\\.
-        This means it will be used for requests made by all users of this bot\\. If you prefer to add a key for yourself only, use the /addkey command\\.
-        To donate a key, simply send it after this command, like /donatekey MY\\_API\\_KEY\\.
+        With this command, you can donate a Google API key to be added to the pool of shared keys\\. This means it will be used for requests made by all users of this bot\\.
+        If you prefer to add a key for yourself only, use the /addkey command\\.
+        To donate a key, send it after this command, like /donatekey MY\\_API\\_KEY\\.
         To create a key, use the "Get a Key" button on [this page](https://developers.google.com/custom-search/v1/introduction#identify_your_application_to_google_with_api_key)\\.
         """,
         parse_mode: "MarkdownV2",
@@ -46,6 +72,26 @@ defmodule ImageBot do
     Logger.info("User [#{inspect(user)}] graciously donated a key! <3")
     Search.Keys.add(key)
     answer(context, "Thank you so much for donating a key! We love you <3")
+  end
+
+  def handle({:command, :addkey, %{text: ""}}, context),
+    do:
+      answer(
+        context,
+        """
+        With this command, you can add a personal Google API key\\. This means it will only be used for requests made by you\\.
+        If you prefer to add a shared key for all users, use the /donatekey command\\.
+        To add a key, send it after this command, like /addkey MY\\_API\\_KEY\\.
+        To create a key, use the "Get a Key" button on [this page](https://developers.google.com/custom-search/v1/introduction#identify_your_application_to_google_with_api_key)\\.
+        """,
+        parse_mode: "MarkdownV2",
+        disable_web_page_preview: true
+      )
+
+  def handle({:command, :addkey, %{from: %{id: user_id}, text: key}}, context) do
+    Logger.info("User [#{user_id}] added a personal key")
+    Search.Keys.add(user_id, key)
+    answer(context, "Your key has been added!")
   end
 
   defp handle_inline_query(%{from: %{id: user_id}, query: query}, context) do
