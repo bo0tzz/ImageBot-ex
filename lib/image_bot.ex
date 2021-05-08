@@ -46,12 +46,15 @@ defmodule ImageBot do
     answer(
       context,
       """
-      This is a bot for searching through Google images and sending results to a group.
-      To use it, just type @#{me.username} <search> in the chat box. For example, to find pictures of dogs, you could type:
+      This is a bot for searching through Google images and sending results to a group\\.
+      To use it, just type @#{me.username} \\<search\\> in the chat box\\. For example, to find pictures of dogs, you could type:
       @#{me.username} dogs
 
-      There is a limit to the amount of searches that can be done through this bot every day. For more detail see the /limits command.
-      """
+      There is a limit to the amount of searches that can be done through this bot every day\\. For more detail see the /limits command\\.
+
+      [Source code on GitHub](https://github.com/bo0tzz/ImageBot-ex)
+      """,
+      parse_mode: "MarkdownV2"
     )
   end
 
