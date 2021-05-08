@@ -126,7 +126,7 @@ defmodule ImageBot do
   end
 
   defp handle_inline_query(%{from: %{id: user_id}, query: query}, context) do
-    Logger.info("Inline query for '#{query}' from user [#{user_id}]")
+    Logger.info("Inline query from user [#{user_id}]")
 
     {response, opts} =
       case Cachex.get(:search_cache, query) do
