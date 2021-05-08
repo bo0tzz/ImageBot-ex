@@ -176,6 +176,9 @@ defmodule ImageBot do
                 )
             end
 
+          {:ok, nil} ->
+            error_response("No results", "No results were found for this query")
+
           {:ok, items} ->
             results = as_query_results(items)
             Cachex.put(:search_cache, query, results)
