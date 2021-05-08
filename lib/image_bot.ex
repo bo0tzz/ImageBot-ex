@@ -101,8 +101,7 @@ defmodule ImageBot do
       {[],
        [
          switch_pm_text: "Request limit reached. Click here for more information.",
-         switch_pm_parameter: "limited_info_request",
-         cache_time: 0
+         switch_pm_parameter: "limited_info_request"
        ]}
 
   defp error_response(), do: error_response("Error", "An unexpected error occurred!")
@@ -119,5 +118,5 @@ defmodule ImageBot do
              message_text: title <> "\n" <> message
            }
          }
-       ], opts}
+       ], [cache_time: 0 | opts]}
 end
