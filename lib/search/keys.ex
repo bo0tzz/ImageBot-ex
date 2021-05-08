@@ -52,6 +52,39 @@ defmodule Search.Keys do
   end
 
   @impl true
+  def handle_cast({:mark_limited, id, key}, %Keys{key_mappings: mappings} = state) do
+    mappings = case Map.get(mappings, id) do
+      nil ->
+        mark_limited(mappings, :shared, key)
+
+      keys ->
+        case Enum.any?(keys, &match?({^key, _}, &1)) do
+          false -> mark_limited(mappings, :shared, key)
+          true -> mark_limited(mappings, id, key)
+        end
+    end
+
+    {
+      :noreply,
+      %{state | key_mappings: mappings},
+      {:continue, :save}
+    }
+  end
+
+  defp mark_limited(mappings, id, key) do
+    until = DateTime.utc_now() |> DateTime.add(86_400, :second) |> DateTime.to_unix()
+
+    Map.update(mappings, id, [], fn keys ->
+      Enum.map(keys, fn k ->
+        case k do
+          {^key, 0} -> {key, until}
+          pass -> pass
+        end
+      end)
+    end)
+  end
+
+  @impl true
   def handle_cast({:mark_bad, id, key}, %Keys{key_mappings: mappings} = state) do
     mappings =
       case Map.get(mappings, id) do
@@ -158,6 +191,5 @@ defmodule Search.Keys do
   def get_key(id), do: GenServer.call(__MODULE__, {:get_key, id})
 
   def mark_bad(id, key), do: GenServer.cast(__MODULE__, {:mark_bad, id, key})
-  # TODO
-  def mark_limited(id, key), do: nil
+  def mark_limited(id, key), do: GenServer.cast(__MODULE__, {:mark_limited, id, key})
 end
