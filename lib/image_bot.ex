@@ -9,6 +9,8 @@ defmodule ImageBot do
 
   def bot(), do: @bot
 
+  command("donatekey", description: "Donate a shared API key to the bot")
+
   def handle({:inline_query, %{query: query} = msg}, context) do
     case String.trim(query) do
       "" -> nil
@@ -21,9 +23,29 @@ defmodule ImageBot do
       context,
       """
       Unfortunately this bot can only make a limited number of free searches every day. For now, you'll need to wait until the limits reset.
-      In the near future there will be the possibility to add your own API keys to avoid being limited
+      In the near future there will be the possibility to add your own API keys to avoid being limited.
       """
     )
+  end
+
+  def handle({:command, :donatekey, %{text: ""}}, context),
+    do:
+      answer(
+        context,
+        """
+        With this command, you can donate a Google API key to be added to the pool of shared keys\\.
+        This means it will be used for requests made by all users of this bot\\. If you prefer to add a key for yourself only, use the /addkey command\\.
+        To donate a key, simply send it after this command, like /donatekey MY\\_API\\_KEY\\.
+        To create a key, use the "Get a Key" button on [this page](https://developers.google.com/custom-search/v1/introduction#identify_your_application_to_google_with_api_key)\\.
+        """,
+        parse_mode: "MarkdownV2",
+        disable_web_page_preview: true
+      )
+
+  def handle({:command, :donatekey, %{from: user, text: key}}, context) do
+    Logger.info("User [#{inspect(user)}] graciously donated a key! <3")
+    Search.Keys.add(key)
+    answer(context, "Thank you so much for donating a key! We love you <3")
   end
 
   defp handle_inline_query(%{from: %{id: user_id}, query: query}, context) do
@@ -43,6 +65,7 @@ defmodule ImageBot do
   end
 
   defp search(user_id, query, tries \\ 3)
+
   defp search(user_id, query, 0) do
     Logger.error("Query '#{query}' from user [#{user_id}] failed retries")
     error_response("Error", "Something went wrong, please try again")
