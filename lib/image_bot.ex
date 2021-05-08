@@ -42,12 +42,13 @@ defmodule ImageBot do
     answer_inline_query(context, response, opts)
   end
 
+  defp search(user_id, query, tries \\ 3)
   defp search(user_id, query, 0) do
     Logger.error("Query '#{query}' from user [#{user_id}] failed retries")
     error_response("Error", "Something went wrong, please try again")
   end
 
-  defp search(user_id, query, tries \\ 3) do
+  defp search(user_id, query, tries) do
     Logger.debug("Searching for query '#{query}'")
 
     case Search.Keys.get_key(user_id) do
@@ -118,5 +119,5 @@ defmodule ImageBot do
              message_text: title <> "\n" <> message
            }
          }
-       ], [cache_time: 0 | opts]}
+       ], Keyword.merge([cache_time: 0], opts)}
 end
