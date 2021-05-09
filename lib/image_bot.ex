@@ -124,6 +124,9 @@ defmodule ImageBot do
     answer(context, "Your key has been added!")
   end
 
+  def handle({:command, cmd, _}, _), do: Logger.warn("Ignoring unknown command: #{cmd}")
+  def handle(event, _), do: Logger.warn("Ignoring unknown #{elem(event, 0)}")
+
   defp handle_inline_query(%{from: %{id: user_id}, query: query}, context) do
     Logger.info("Inline query from user [#{user_id}]")
 
