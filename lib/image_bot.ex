@@ -72,7 +72,7 @@ defmodule ImageBot do
     Logger.info("User [#{user_ref}] sent feedback [#{feedback}]")
 
     notify_owner("""
-    *User #{user_ref} sent feedback:*
+    User #{user_ref} sent feedback:
     #{feedback}
     """)
 
@@ -237,7 +237,6 @@ defmodule ImageBot do
       ExGram.send_message(
         Application.fetch_env!(:image_bot, :feedback_chat),
         message,
-        parse_mode: "MarkdownV2",
         bot: bot()
       )
 end
