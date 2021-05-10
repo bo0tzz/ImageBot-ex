@@ -10,6 +10,7 @@ defmodule ImageBot do
   def bot(), do: @bot
   def me(), do: ExGram.get_me(bot: bot())
 
+  command("get", description: "Search for an image on google")
   command("donatekey", description: "Donate a shared API key to the bot")
   command("addkey", description: "Add a personal API key to the bot")
   command("feedback", description: "Send feedback about the bot")
@@ -124,8 +125,65 @@ defmodule ImageBot do
     answer(context, "Your key has been added!")
   end
 
+  def handle({:command, :get, %{text: ""}}, context) do
+    {:ok, me} = me()
+
+    answer(
+      context,
+      """
+      You can use this command to search for images, for example: /get dogs
+      You can also use this bot through inline mode, by typing @#{me.username} dogs
+      """
+    )
+  end
+
+  def handle(
+        {:command, :get, %{chat: %{id: chat_id}, from: %{id: user_id}, text: query}},
+        context
+      ) do
+    Logger.info("/get query from user [#{user_id}]")
+
+    case Search.query(user_id, query) do
+      {:error, :limited} ->
+        answer(context, "The request limit has been reached. Use /limits for more information.")
+
+      {:error, :unknown} ->
+        answer(context, "Something went wrong, please try again")
+
+      {:error, other} ->
+        answer(context, "An unexpected error with code #{other} occurred")
+
+      {:ok, nil} ->
+        answer(context, "No images found")
+
+      {:ok, items} ->
+        try_send_photo(items, chat_id)
+    end
+  end
+
   def handle({:command, cmd, _}, _), do: Logger.warn("Ignoring unknown command: #{cmd}")
   def handle(event, _), do: Logger.warn("Ignoring unknown #{elem(event, 0)}")
+
+  def try_send_photo(items, chat, tries \\ 3)
+
+  def try_send_photo(_, chat, 0) do
+    Logger.warn("Sending photo message failed retries")
+    ExGram.send_message(chat, "Something went wrong! Please try again.")
+  end
+
+  def try_send_photo(items, chat, tries) do
+    url = Enum.random(items).link
+    Logger.debug("Responding to /get with url #{url}")
+
+    case ExGram.send_photo(chat, url, bot: bot()) do
+      {:ok, _} ->
+        :ok
+
+      {:error, %{message: error_message}} ->
+        Logger.warn("Failed to send photo message: #{error_message}")
+        try_send_photo(items, chat, tries - 1)
+    end
+  end
 
   defp handle_inline_query(%{from: %{id: user_id}, query: query}, context) do
     Logger.info("Inline query from user [#{user_id}]")
