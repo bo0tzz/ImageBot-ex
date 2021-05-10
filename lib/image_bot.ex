@@ -131,23 +131,47 @@ defmodule ImageBot do
     Logger.info("Inline query from user [#{user_id}]")
 
     {response, opts} =
-      case Cachex.get(:search_cache, query) do
-        {:ok, nil} ->
-          search(user_id, query)
+      case query(user_id, query) do
+        {:error, :limited} ->
+          inline_error_response(:limited)
 
-        {:ok, response} ->
-          Logger.info("Cache hit")
-          {response, []}
+        {:error, :unknown} ->
+          inline_error_response("Error", "Something went wrong, please try again")
+
+        {:error, other} ->
+          inline_error_response(
+            "Error #{other}",
+            "An unexpected error with code #{other} occurred"
+          )
+
+        {:ok, nil} ->
+          inline_error_response("No results", "No results were found for this query")
+
+        {:ok, items} ->
+          {as_inline_query_results(items), []}
       end
 
     answer_inline_query(context, response, opts)
+  end
+
+  defp query(user_id, query) do
+    case Cachex.get(:search_cache, query) do
+      {:ok, nil} ->
+        {:ok, items} = search(user_id, query)
+        Cachex.put(:search_cache, query, items)
+        {:ok, items}
+
+      {:ok, items} ->
+        Logger.info("Cache hit")
+        {:ok, items}
+    end
   end
 
   defp search(user_id, query, tries \\ 3)
 
   defp search(user_id, _, 0) do
     Logger.error("Query from user [#{user_id}] failed retries")
-    error_response("Error", "Something went wrong, please try again")
+    {:error, :unknown}
   end
 
   defp search(user_id, query, tries) do
@@ -155,14 +179,14 @@ defmodule ImageBot do
 
     case Search.Keys.get_key(user_id) do
       {:ok, nil} ->
-        error_response(:limited)
+        {:error, :limited}
 
       {:ok, key} ->
         case Search.find_images(key, query) do
-          {:error, response} ->
-            Logger.warn("Query from user [#{user_id}] caused error #{response}!")
+          {:error, error} ->
+            Logger.warn("Query from user [#{user_id}] caused error #{error}!")
 
-            case response do
+            case error do
               400 ->
                 Search.Keys.mark_bad(user_id, key)
                 search(user_id, query, tries - 1)
@@ -172,24 +196,19 @@ defmodule ImageBot do
                 search(user_id, query, tries - 1)
 
               other ->
-                error_response(
-                  "Error #{other}",
-                  "An unexpected error with code #{other} occurred"
-                )
+                {:error, other}
             end
 
           {:ok, nil} ->
-            error_response("No results", "No results were found for this query")
+            {:ok, nil}
 
           {:ok, items} ->
-            results = as_query_results(items)
-            Cachex.put(:search_cache, query, results)
-            {results, []}
+            {:ok, items}
         end
     end
   end
 
-  defp as_query_results(items) do
+  defp as_inline_query_results(items) do
     Enum.map(items, fn item ->
       %ExGram.Model.InlineQueryResultPhoto{
         id: UUID.uuid4(),
@@ -202,7 +221,7 @@ defmodule ImageBot do
     end)
   end
 
-  defp error_response(:limited),
+  defp inline_error_response(:limited),
     do:
       {[],
        [
@@ -210,7 +229,7 @@ defmodule ImageBot do
          switch_pm_parameter: "limited_info_request"
        ]}
 
-  defp error_response(title, message, opts \\ []),
+  defp inline_error_response(title, message, opts \\ []),
     do:
       {[
          %ExGram.Model.InlineQueryResultArticle{
