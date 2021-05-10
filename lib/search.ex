@@ -4,9 +4,14 @@ defmodule Search do
   def query(user_id, query) do
     case Cachex.get(:search_cache, query) do
       {:ok, nil} ->
-        {:ok, items} = search(user_id, query)
-        Cachex.put(:search_cache, query, items)
-        {:ok, items}
+        case search(user_id, query) do
+          {:ok, items} ->
+            Cachex.put(:search_cache, query, items)
+            {:ok, items}
+
+          error ->
+            error
+        end
 
       {:ok, items} ->
         Logger.info("Cache hit")

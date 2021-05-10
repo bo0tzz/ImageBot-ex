@@ -168,7 +168,7 @@ defmodule ImageBot do
 
   def try_send_photo(_, chat, 0) do
     Logger.warn("Sending photo message failed retries")
-    ExGram.send_message(chat, "Something went wrong! Please try again.")
+    ExGram.send_message(chat, "Something went wrong! Please try again.", bot: bot())
   end
 
   def try_send_photo(items, chat, tries) do
