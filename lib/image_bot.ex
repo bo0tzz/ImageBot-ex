@@ -99,7 +99,7 @@ defmodule ImageBot do
   def handle({:command, :donatekey, %{from: user, text: key}}, context) do
     user_ref = parse_user_ref(user)
     Logger.info("User [#{user_ref}] graciously donated a key! <3")
-    Search.Keys.add(key)
+    Keys.add(key)
     notify_owner("User #{user_ref} donated a key <3")
     answer(context, "Thank you so much for donating a key! We love you <3")
   end
@@ -120,7 +120,7 @@ defmodule ImageBot do
 
   def handle({:command, :addkey, %{from: %{id: user_id}, text: key}}, context) do
     Logger.info("User [#{user_id}] added a personal key")
-    Search.Keys.add(user_id, key)
+    Keys.add(user_id, key)
     answer(context, "Your key has been added!")
   end
 
@@ -177,7 +177,7 @@ defmodule ImageBot do
   defp search(user_id, query, tries) do
     Logger.debug("Searching for query '#{query}'")
 
-    case Search.Keys.get_key(user_id) do
+    case Keys.get_key(user_id) do
       {:ok, nil} ->
         {:error, :limited}
 
@@ -188,11 +188,11 @@ defmodule ImageBot do
 
             case error do
               400 ->
-                Search.Keys.mark_bad(user_id, key)
+                Keys.mark_bad(user_id, key)
                 search(user_id, query, tries - 1)
 
               429 ->
-                Search.Keys.mark_limited(user_id, key)
+                Keys.mark_limited(user_id, key)
                 search(user_id, query, tries - 1)
 
               other ->

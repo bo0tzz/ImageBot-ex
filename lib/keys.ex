@@ -1,6 +1,5 @@
-defmodule Search.Keys do
+defmodule Keys do
   use GenServer
-  alias Search.Keys
 
   require Logger
 
