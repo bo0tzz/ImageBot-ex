@@ -11,3 +11,5 @@ case Config.config_env() do
         [application: :tesla]
       ]
 end
+
+config :tesla, adapter: Tesla.Adapter.Hackney
