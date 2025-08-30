@@ -39,7 +39,7 @@ defmodule Search do
             Logger.warn("Query from user [#{user_id}] caused error #{error}!")
 
             case error do
-              400 ->
+              c when c in [400, 403] ->
                 Keys.mark_bad(user_id, key)
                 search(user_id, query, tries - 1)
 
