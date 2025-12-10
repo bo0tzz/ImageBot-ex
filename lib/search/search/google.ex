@@ -18,7 +18,7 @@ defmodule Search.Google do
 
   defp params(api_key, query) do
     [
-      cx: "029cec1b43f4b5223",
+      cx: "016322137100648159445:e9nsxf_q_-m",
       searchType: "image",
       key: api_key,
       q: query
