@@ -4,7 +4,24 @@ defmodule Search do
   def query(user_id, query) do
     case Cachex.get(:search_cache, query) do
       {:ok, nil} ->
-        case search(user_id, query) do
+        :telemetry.execute([:image_bot, :cache_miss], %{count: 1}, %{})
+
+        result =
+          :telemetry.span([:image_bot, :search], %{}, fn ->
+            res = search(user_id, query)
+
+            status =
+              case res do
+                {:ok, _} -> :ok
+                {:error, :limited} -> :limited
+                {:error, :unknown} -> :unknown
+                {:error, _} -> :error
+              end
+
+            {res, %{status: status}}
+          end)
+
+        case result do
           {:ok, items} ->
             Cachex.put(:search_cache, query, items)
             {:ok, items}
@@ -14,6 +31,7 @@ defmodule Search do
         end
 
       {:ok, items} ->
+        :telemetry.execute([:image_bot, :cache_hit], %{count: 1}, %{})
         Logger.info("Cache hit")
         {:ok, items}
     end

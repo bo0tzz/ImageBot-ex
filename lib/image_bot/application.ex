@@ -17,12 +17,14 @@ defmodule ImageBot.Application do
        ]},
       Keys,
       ExGram,
-      {ImageBot, [method: :polling, token: Application.fetch_env!(:image_bot, :bot_token)]}
+      {ImageBot, [method: :polling, token: Application.fetch_env!(:image_bot, :bot_token)]},
+      {TelemetryMetricsPrometheus.Core, metrics: ImageBot.Metrics.metrics()},
+      {Bandit, plug: ImageBot.Metrics, port: Application.get_env(:image_bot, :metrics_port, 4000)}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: ImageBot.Supervisor]
+    opts = [strategy: :one_for_one, name: ImageBot.Application.Supervisor]
     Supervisor.start_link(children, opts)
   end
 end

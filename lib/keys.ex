@@ -33,11 +33,15 @@ defmodule Keys do
   @impl true
   def handle_continue(:save, state) do
     save(state)
+    :telemetry.execute([:image_bot, :key_active_count], %{count: count_active_keys(state.key_mappings)}, %{})
     {:noreply, state}
   end
 
   @impl true
   def handle_cast({:add, {id, key}}, %Keys{key_mappings: mappings} = state) do
+    type = if id == :shared, do: :shared, else: :personal
+    :telemetry.execute([:image_bot, :key_added], %{count: 1}, %{type: type})
+
     mappings =
       Map.update(mappings, id, [{key, 0}], fn keys ->
         [{key, 0} | keys]
@@ -52,6 +56,7 @@ defmodule Keys do
 
   @impl true
   def handle_cast({:mark_limited, id, key}, %Keys{key_mappings: mappings} = state) do
+    :telemetry.execute([:image_bot, :key_limited], %{count: 1}, %{})
     mappings =
       case Map.get(mappings, id) do
         nil ->
@@ -86,6 +91,7 @@ defmodule Keys do
 
   @impl true
   def handle_cast({:mark_bad, id, key}, %Keys{key_mappings: mappings} = state) do
+    :telemetry.execute([:image_bot, :key_bad], %{count: 1}, %{})
     Logger.warn("Marking key [#{key}] as bad")
 
     mappings =
@@ -171,6 +177,10 @@ defmodule Keys do
         Logger.warn("Could not read keys database at path #{path}: #{:file.format_error(reason)}")
         %{}
     end
+  end
+
+  defp count_active_keys(mappings) do
+    Enum.sum(for {_owner, keys} <- mappings, {_key, 0} <- keys, do: 1)
   end
 
   defp save(%Keys{storage_path: path, key_mappings: keys} = state) do

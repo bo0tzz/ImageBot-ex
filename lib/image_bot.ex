@@ -33,6 +33,8 @@ defmodule ImageBot do
   def handle({:command, :start, msg}, context), do: handle({:command, :info, msg}, context)
 
   def handle({:command, :limits, _msg}, context) do
+    :telemetry.execute([:image_bot, :command], %{count: 1}, %{command: "limits"})
+
     answer(
       context,
       """
@@ -44,6 +46,7 @@ defmodule ImageBot do
   end
 
   def handle({:command, :info, _msg}, context) do
+    :telemetry.execute([:image_bot, :command], %{count: 1}, %{command: "info"})
     {:ok, me} = me()
 
     answer(
@@ -69,6 +72,7 @@ defmodule ImageBot do
       """)
 
   def handle({:command, :feedback, %{from: user, text: feedback}}, context) do
+    :telemetry.execute([:image_bot, :command], %{count: 1}, %{command: "feedback"})
     user_ref = parse_user_ref(user)
     Logger.info("User [#{user_ref}] sent feedback [#{feedback}]")
 
@@ -98,6 +102,7 @@ defmodule ImageBot do
       )
 
   def handle({:command, :donatekey, %{from: user, text: key}}, context) do
+    :telemetry.execute([:image_bot, :command], %{count: 1}, %{command: "donatekey"})
     user_ref = parse_user_ref(user)
     Logger.info("User [#{user_ref}] graciously donated a key! <3")
     Keys.add(key)
@@ -120,6 +125,7 @@ defmodule ImageBot do
       )
 
   def handle({:command, :addkey, %{from: %{id: user_id}, text: key}}, context) do
+    :telemetry.execute([:image_bot, :command], %{count: 1}, %{command: "addkey"})
     Logger.info("User [#{user_id}] added a personal key")
     Keys.add(user_id, key)
     answer(context, "Your key has been added!")
@@ -141,6 +147,7 @@ defmodule ImageBot do
         {:command, :get, %{chat: %{id: chat_id}, from: %{id: user_id}, text: query}},
         context
       ) do
+    :telemetry.execute([:image_bot, :command], %{count: 1}, %{command: "get"})
     Logger.info("/get query from user [#{user_id}]")
 
     case Search.query(user_id, query) do
@@ -181,11 +188,13 @@ defmodule ImageBot do
 
       {:error, %{message: error_message}} ->
         Logger.warn("Failed to send photo message: #{error_message}")
+        :telemetry.execute([:image_bot, :photo_retry], %{count: 1}, %{})
         try_send_photo(items, chat, tries - 1)
     end
   end
 
   defp handle_inline_query(%{from: %{id: user_id}, query: query}, context) do
+    :telemetry.execute([:image_bot, :inline_query], %{count: 1}, %{})
     Logger.info("Inline query from user [#{user_id}]")
 
     {response, opts} =
@@ -218,7 +227,7 @@ defmodule ImageBot do
         id: UUID.uuid4(),
         type: "photo",
         photo_url: item.link,
-        thumb_url: item.image.thumbnailLink,
+        thumbnail_url: item.image.thumbnailLink,
         photo_width: item.image.width,
         photo_height: item.image.height
       }

@@ -29,7 +29,11 @@ defmodule ImageBot.MixProject do
       {:google_api_custom_search, "~> 0.16"},
       {:elixir_uuid, "~> 1.2"},
       {:dotenv_parser, "~> 1.2"},
-      {:cachex, "~> 3.3"}
+      {:cachex, "~> 3.3"},
+      {:telemetry_metrics, "~> 1.0"},
+      {:telemetry_metrics_prometheus_core, "~> 1.1"},
+      {:bandit, "~> 1.0"},
+      {:plug, "~> 1.16"}
     ]
   end
 end
